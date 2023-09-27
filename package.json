@@ -1,0 +1,17 @@
+{
+  "name": "p6-backend",
+  "version": "1.0.0",
+  "description": "a node.js backend learning project",
+  "main": "../src/server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "nodeserver": "nodemon -r esm server"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "esm": "^3.2.25",
+    "express": "^4.18.2",
+    "mongoose": "^6.7.3"
+  }
+}
