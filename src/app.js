@@ -7,7 +7,7 @@ const app = express()
 
 app.use(express.json())
 
-mongoose.set('strictQuery', false);
+mongoose.set('strictQuery', false)
 
 mongoose
   .connect(
@@ -21,20 +21,20 @@ mongoose
     console.error(error)
   })
 
-  app.use('/api/auth',userRouter)
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*')
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization'
+  )
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET, POST, PUT, DELETE, PATCH, OPTIONS'
+  )
+  next()
+})
 
-// app.use((req, res, next) => {
-//   res.setHeader('Access-Control-Allow-Origin', '*')
-//   res.setHeader(
-//     'Access-Control-Allow-Headers',
-//     'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization'
-//   )
-//   res.setHeader(
-//     'Access-Control-Allow-Methods',
-//     'GET, POST, PUT, DELETE, PATCH, OPTIONS'
-//   )
-//   next()
-// })
+app.use('/api/auth', userRouter)
 
 // app.use('/api/stuff', (req, res, next) => {
 //   const stuff = [
@@ -57,7 +57,6 @@ mongoose
 //   ]
 //   res.status(200).json(stuff)
 // })
-
 
 // app.get('/get', (req, res, next) => {
 //     res.status(200).json({result: 'get success'})
