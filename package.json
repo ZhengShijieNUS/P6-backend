@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "a node.js backend learning project",
   "main": "../src/server.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "nodeserver": "nodemon -r esm server"
+    "nodeserver": "nodemon server"
   },
   "author": "",
   "license": "ISC",
