@@ -3,6 +3,8 @@ import mongoose from 'mongoose'
 
 import userRouter from './routes/userRouter.js'
 
+import path from 'path'
+
 const app = express()
 
 app.use(express.json())
@@ -34,7 +36,10 @@ app.use((req, res, next) => {
   next()
 })
 
+app.use('/images', express.static(path.join(__dirname, 'images')))
+
 app.use('/api/auth', userRouter)
+
 
 // app.use('/api/stuff', (req, res, next) => {
 //   const stuff = [
