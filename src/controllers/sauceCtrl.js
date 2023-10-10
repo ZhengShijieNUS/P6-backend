@@ -1,4 +1,5 @@
 import Sauce from '../models/sauce.js'
+import fs from 'fs'
 
 export async function getAllSauces (req, res, next) {
   try {
@@ -28,37 +29,66 @@ export async function getOneSauce (req, res, next) {
 }
 
 export async function createSauce (req, res, next) {
-// covert the body.sauce to jsonand use it 
-// rebuild the url for imageUrl 
+  // covert the body.sauce to jsonand use it
+  // rebuild the url for imageUrl
 
-    const reqJson = JSON.parse(req.body.sauce)
-    const url = req.protocol + '://' + req.get('host');
-    const sauce = new Sauce({
-        userId:reqJson.userId,
-        name: reqJson.name,
-        manufacturer: reqJson.manufacturer,
-        description: reqJson.description,
-        mainPepper: reqJson.mainPepper,
-        imageUrl: url + '/src/images/' + req.file.filename,
-        heat: reqJson.heat,
-        likes:0,
-        dislikes:0,
-    })
+  const reqJson = JSON.parse(req.body.sauce)
+  const url = req.protocol + '://' + req.get('host')
+  const sauce = new Sauce({
+    userId: reqJson.userId,
+    name: reqJson.name,
+    manufacturer: reqJson.manufacturer,
+    description: reqJson.description,
+    mainPepper: reqJson.mainPepper,
+    imageUrl: url + '/src/images/' + req.file.filename,
+    heat: reqJson.heat,
+    likes: 0,
+    dislikes: 0
+  })
 
-    try {
-      const newSauce = await sauce.save()
+  try {
+    const newSauce = await sauce.save()
 
-      if(!newSauce){
-        throw new Error("Create new sauce failed")
-      }
-
-      res.status(200).json({
-        message: 'Sauce created and saved successfully'
-      })
-    } catch (err) {
-        res.status(400).json({
-            error: err.message
-        })
+    if (!newSauce) {
+      throw new Error('Create new sauce failed')
     }
 
+    res.status(200).json({
+      message: 'Sauce created and saved successfully'
+    })
+  } catch (err) {
+    res.status(400).json({
+      error: err.message
+    })
+  }
+}
+
+export async function deleteSauce (req, res, next) {
+  try {
+    const sauce = await Sauce.findOne({ _id: req.params.id })
+
+    if (!sauce) {
+      throw new Error("The sauce doesn't exist")
+    }
+
+    const filename = sauce.imageUrl.split('/images/')[1]
+    fs.unlink('src/images/' + filename, async () => {
+      try {
+        await Sauce.deleteOne({ _id: req.params.id })
+
+        res.status(200).json({
+          message: 'The sauce is successfully deleted'
+        })
+        
+      } catch (error) {
+        res.status(400).json({
+          error: error.message
+        })
+      }
+    })
+  } catch (err) {
+    res.status(400).json({
+      error: err.message
+    })
+  }
 }
