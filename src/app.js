@@ -1,9 +1,11 @@
 import express from 'express'
 import mongoose from 'mongoose'
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import path from 'path';
 
 import userRouter from './routes/userRouter.js'
-
-import path from 'path'
+import sauceRouter from './routes/sauceRouter.js'
 
 const app = express()
 
@@ -36,9 +38,16 @@ app.use((req, res, next) => {
   next()
 })
 
-app.use('/images', express.static(path.join(__dirname, 'images')))
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const imageStaticPath = path.join(__dirname,'images')
+
+app.use('/src/images', express.static(imageStaticPath))
 
 app.use('/api/auth', userRouter)
+app.use('/api/sauces', sauceRouter)
+
 
 
 // app.use('/api/stuff', (req, res, next) => {
