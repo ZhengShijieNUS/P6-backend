@@ -6,7 +6,9 @@ import {
   getAllSauces,
   getOneSauce,
   createSauce,
-  deleteSauce
+  updateSauce,
+  deleteSauce,
+  setLikeStatus
 } from '../controllers/sauceCtrl.js'
 
 const sauceRouter = express.Router()
@@ -14,8 +16,8 @@ const sauceRouter = express.Router()
 sauceRouter.get('/', auth, getAllSauces)
 sauceRouter.get('/:id', auth, getOneSauce)
 sauceRouter.post('/', auth, multer, createSauce)
-sauceRouter.put('/:id', auth)
+sauceRouter.put('/:id', auth, multer, updateSauce)
 sauceRouter.delete('/:id', auth, deleteSauce)
-sauceRouter.post('/:id/like', auth)
+sauceRouter.post('/:id/like', auth, setLikeStatus)
 
 export default sauceRouter
