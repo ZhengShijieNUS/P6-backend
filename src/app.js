@@ -14,9 +14,7 @@ app.use(express.json())
 mongoose.set('strictQuery', false)
 
 mongoose
-  .connect(
-    'mongodb+srv://admin:QdtDsxu5tNjbQYjJ@mongodb-learning.ayd34ej.mongodb.net/?retryWrites=true&w=majority'
-  )
+  .connect('mongodb+srv://admin:QdtDsxu5tNjbQYjJ@mongodb-learning.ayd34ej.mongodb.net/?retryWrites=true&w=majority')
   .then(() => {
     console.log('Successfully connected to MongoDB Atlas!')
   })

@@ -18,9 +18,9 @@ export async function getOneSauce (req, res, next) {
     if (!sauce) {
       throw new Error("The sauce doesn't exist")
     }
-    res.status(200).json({
+    res.status(200).json(
       sauce
-    })
+    )
   } catch (err) {
     res.status(400).json({
       error: err.message
@@ -64,11 +64,13 @@ export async function createSauce (req, res, next) {
 export async function updateSauce (req, res, next) {
   const url = req.protocol + '://' + req.get('host')
 
-  let newSauce
-
-  if (req.body.sauce) {
-    const reqJson = JSON.parse(req.body.sauce)
-    newSauce = new Sauce({
+ 
+  let newSauce = await Sauce.findOne({ _id: req.params.id })
+  console.log(req.body)
+  
+  const reqJson = req.body
+  if (req.file) {
+    newSauce = {
       userId: reqJson.userId,
       name: reqJson.name,
       manufacturer: reqJson.manufacturer,
@@ -76,26 +78,25 @@ export async function updateSauce (req, res, next) {
       mainPepper: reqJson.mainPepper,
       imageUrl: url + '/src/images/' + req.file.filename,
       heat: reqJson.heat,
-      likes: reqJson.likes,
-      dislikes: reqJson.dislikes
-    })
+     
+    }
   } else {
-    newSauce = new Sauce({
-      userId: req.body.userId,
-      name: req.body.name,
-      manufacturer: req.body.manufacturer,
-      description: req.body.description,
-      mainPepper: req.body.mainPepper,
-      imageUrl: req.body.imageUrl,
-      heat: req.body.heat,
-      likes: req.body.likes,
-      dislikes: req.body.dislikes
-    })
+    newSauce = {
+      userId: reqJson.userId,
+      name: reqJson.name,
+      manufacturer: reqJson.manufacturer,
+      description: reqJson.description,
+      mainPepper: reqJson.mainPepper,
+      imageUrl: reqJson.imageUrl,
+      heat: reqJson.heat,
+     
+    }
   }
 
   try {
-    const result = await Sauce.updateOne({ _id: req.params.id }, newSauce)
 
+    const result = await Sauce.findOneAndUpdate({ _id: req.params.id }, newSauce)
+    
     res.status(200).json({
       message: 'Sauce updated successfully'
     })
