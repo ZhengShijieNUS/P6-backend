@@ -6,6 +6,8 @@ export function auth (req, res, next) {
     const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET')
     const userId = decodedToken.userId
 
+    req.userId = userId
+
     if (req.body.userId && req.body.userId !== userId) {
       throw new Error('UserID does not match with the sauce owner ID')
     } else {

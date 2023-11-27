@@ -107,170 +107,88 @@ export async function updateSauce (req, res, next) {
   }
 }
 
-export async function deleteSauce (req, res, next) {
+export async function deleteSauce(req, res, next) {
   try {
-    const sauce = await Sauce.findOne({ _id: req.params.id })
+    const sauceId = req.params.id;
+    const userId = req.userId; //userId is set and passed through auth middleware
+
+    const sauce = await Sauce.findById(sauceId);
 
     if (!sauce) {
-      throw new Error("The sauce doesn't exist")
+      return res.status(404).json({ message: "Sauce not found" });
     }
 
-    if (sauce.userId !== req.params.userId) {
-      throw new Error(
-        'You are not the owner of the sauce, please change the user accordingly.'
-      )
+    if (sauce.userId !== userId) {
+      return res.status(403).json({
+        message: 'You are not authorized to delete this sauce.'
+      });
     }
 
-    const filename = sauce.imageUrl.split('/images/')[1]
-    fs.unlink('src/images/' + filename, async () => {
-      try {
-        await Sauce.deleteOne({ _id: req.params.id })
+    const filename = sauce.imageUrl.split('/images/')[1];
 
-        res.status(200).json({
-          message: 'The sauce is successfully deleted'
-        })
-      } catch (error) {
-        res.status(400).json({
-          error: error.message
-        })
+    fs.unlink(`src/images/${filename}`, async (err) => {
+      if (err) {
+        // Handle file deletion error
+        return res.status(500).json({ error: 'Error deleting image file' });
       }
-    })
-  } catch (err) {
-    res.status(400).json({
-      error: err.message
-    })
+
+      await Sauce.findByIdAndDelete(sauceId);
+      res.status(200).json({ message: 'Sauce successfully deleted' });
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 }
 
-export async function setLikeStatus (req, res, next) {
+export async function setLikeStatus(req, res, next) {
   try {
-    const sauce = await Sauce.findOne({ _id: req.params.id })
+    const sauceId = req.params.id;
+    const { userId, like } = req.body;
 
+    const sauce = await Sauce.findById(sauceId);
     if (!sauce) {
-      throw new Error("The sauce doesn't exist")
+      return res.status(404).json({ message: "Sauce not found" });
     }
 
-    const userId = req.body.userId
-    const likeStatus = req.body.like
+    let update = {};
 
-    const likeArray = sauce.usersLiked
-    const dislikesArray = sauce.usersDisliked
-
-    let newSauce
-
-    if (likeArray.includes(userId)) {
-      if (likeStatus === 1) {
-        //no change needed
-        res.status(200).json({
-          message: 'User has liked the sauce'
-        })
-      } else if (likeStatus === -1) {
-        newSauce = new sauce({
-          userId: sauce.userId,
-          name: sauce.name,
-          manufacturer: sauce.manufacturer,
-          description: sauce.description,
-          mainPepper: sauce.mainPepper,
-          imageUrl: sauce.imageUrl,
-          heat: sauce.heat,
-          like: sauce.like - 1,
-          dislikes: sauce.dislikes + 1,
-          usersLiked: sauce.usersLiked.splice(likeArray.indexOf(userId), 1),
-          usersDisliked: sauce.usersDisliked.push(userId)
-        })
-      } else {
-        newSauce = new sauce({
-          userId: sauce.userId,
-          name: sauce.name,
-          manufacturer: sauce.manufacturer,
-          description: sauce.description,
-          mainPepper: sauce.mainPepper,
-          imageUrl: sauce.imageUrl,
-          heat: sauce.heat,
-          like: sauce.like - 1,
-          dislikes: sauce.dislikes,
-          usersLiked: sauce.usersLiked.splice(likeArray.indexOf(userId), 1),
-          usersDisliked: sauce.usersDisliked
-        })
+    if (like === 1) { // User likes the sauce
+      if (!sauce.usersLiked.includes(userId)) {
+        update = {
+          $inc: { likes: 1 },
+          $push: { usersLiked: userId },
+          $pull: { usersDisliked: userId }
+        };
       }
-    } else if (dislikesArray.includes(userId)) {
-      if (likeStatus === -1) {
-        res.status(200).json({
-          message: 'User has disliked the sauce'
-        })
-      } else if (likeStatus === 1) {
-        newSauce = new sauce({
-          userId: sauce.userId,
-          name: sauce.name,
-          manufacturer: sauce.manufacturer,
-          description: sauce.description,
-          mainPepper: sauce.mainPepper,
-          imageUrl: sauce.imageUrl,
-          heat: sauce.heat,
-          like: sauce.like + 1,
-          dislikes: sauce.dislikes - 1,
-          usersLiked: sauce.usersLiked.push(userId),
-          usersDisliked: sauce.usersDisliked.splice(likeArray.indexOf(userId), 1)
-        })
-      } else {
-        newSauce = new sauce({
-          userId: sauce.userId,
-          name: sauce.name,
-          manufacturer: sauce.manufacturer,
-          description: sauce.description,
-          mainPepper: sauce.mainPepper,
-          imageUrl: sauce.imageUrl,
-          heat: sauce.heat,
-          like: sauce.like,
-          dislikes: sauce.dislikes - 1,
-          usersLiked: sauce.usersLiked,
-          usersDisliked: sauce.usersDisliked.splice(likeArray.indexOf(userId), 1)
-        })
+    } else if (like === -1) { // User dislikes the sauce
+      if (!sauce.usersDisliked.includes(userId)) {
+        update = {
+          $inc: { dislikes: 1 },
+          $push: { usersDisliked: userId },
+          $pull: { usersLiked: userId }
+        };
       }
+    } else { // User is canceling their like/dislike
+      if (sauce.usersLiked.includes(userId)) {
+        update = {
+          $inc: { likes: -1 },
+          $pull: { usersLiked: userId }
+        };
+      } else if (sauce.usersDisliked.includes(userId)) {
+        update = {
+          $inc: { dislikes: -1 },
+          $pull: { usersDisliked: userId }
+        };
+      }
+    }
+
+    if (Object.keys(update).length > 0) {
+      await Sauce.findByIdAndUpdate(sauceId, update);
+      res.status(200).json({ message: "User's like status updated" });
     } else {
-      if (likeStatus === 1) {
-        newSauce = new sauce({
-          userId: sauce.userId,
-          name: sauce.name,
-          manufacturer: sauce.manufacturer,
-          description: sauce.description,
-          mainPepper: sauce.mainPepper,
-          imageUrl: sauce.imageUrl,
-          heat: sauce.heat,
-          like: sauce.like + 1,
-          dislikes: sauce.dislikes,
-          usersLiked: sauce.usersLiked.push(userId),
-          usersDisliked: sauce.usersDisliked
-        })
-      } else if (likeStatus === -1) {
-        newSauce = new sauce({
-          userId: sauce.userId,
-          name: sauce.name,
-          manufacturer: sauce.manufacturer,
-          description: sauce.description,
-          mainPepper: sauce.mainPepper,
-          imageUrl: sauce.imageUrl,
-          heat: sauce.heat,
-          like: sauce.like,
-          dislikes: sauce.dislikes + 1,
-          usersLiked: sauce.usersLiked,
-          usersDisliked: sauce.usersDisliked.push(userId)
-        })
-      } else {
-        res.status(200).json({
-          message: 'User has no status changed on their likes or dislikes'
-        })
-      }
+      res.status(200).json({ message: "No changes to user's like status" });
     }
-
-    await Sauce.updateOne({ _id: req.params.id }, newSauce)
-
-    res.status(200).json({
-      message: "User's like status has changed"
-    })
   } catch (error) {
-    res.status(500).json({
-      error: error.message
-    })
+    res.status(500).json({ error: error.message });
   }
 }
