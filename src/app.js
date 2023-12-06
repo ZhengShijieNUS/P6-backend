@@ -13,6 +13,7 @@ app.use(express.json())
 
 mongoose.set('strictQuery', false)
 
+// set mongoose DB connection settings and try to connect MongoDB
 mongoose
   .connect('mongodb+srv://admin:QdtDsxu5tNjbQYjJ@mongodb-learning.ayd34ej.mongodb.net/?retryWrites=true&w=majority')
   .then(() => {
@@ -23,6 +24,7 @@ mongoose
     console.error(error)
   })
 
+// To set response headers
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader(
@@ -43,41 +45,9 @@ const imageStaticPath = path.join(__dirname,'images')
 
 app.use('/src/images', express.static(imageStaticPath))
 
+// set which router to be use when the specific api format is called
 app.use('/api/auth', userRouter)
 app.use('/api/sauces', sauceRouter)
 
-
-
-// app.use('/api/stuff', (req, res, next) => {
-//   const stuff = [
-//     {
-//       _id: 'oeihfzeoi',
-//       title: 'My first thing',
-//       description: 'All of the info about my first thing',
-//       imageUrl: '',
-//       price: 4900,
-//       userId: 'qsomihvqios'
-//     },
-//     {
-//       _id: 'oeihfzeomoihi',
-//       title: 'My second thing',
-//       description: 'All of the info about my second thing',
-//       imageUrl: '',
-//       price: 2900,
-//       userId: 'qsomihvqios'
-//     }
-//   ]
-//   res.status(200).json(stuff)
-// })
-
-// app.get('/get', (req, res, next) => {
-//     res.status(200).json({result: 'get success'})
-// })
-
-// app.post('/post', (req, res, next) => {
-//     const result = req.body
-//     result.result = "success post"
-//     res.status(201).json(result)
-// })
 
 export default app

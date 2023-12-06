@@ -2,6 +2,14 @@ import User from '../models/user.js'
 import bcrypt from 'bcrypt'
 import jsonwebtoken from 'jsonwebtoken'
 
+/**
+ * The function to sign up a user
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+
 export async function signup (req, res, next) {
   try {
     const hashedPassword = await bcrypt.hash(req.body.password, 10)
@@ -21,6 +29,15 @@ export async function signup (req, res, next) {
   }
 }
 
+/**
+ * 
+ * The login function used for user to log in
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
 export async function login (req, res, next) {
   try {
     const user = await User.findOne({ email: req.body.email })
@@ -31,7 +48,7 @@ export async function login (req, res, next) {
       })
     }
 
-    const valid = await bcrypt.compare(req.body.password, user.password)
+    const valid = await bcrypt.compare(req.body.password, user.password) // compare the password with stored hash password
 
     if (!valid) {
       return res.status(401).json({
@@ -57,7 +74,15 @@ export async function login (req, res, next) {
     })
   }
 }
-
+/**
+ * 
+ * To delete the user
+ * 
+ * @param {*} req
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
 export async function removeUser (req, res, next) {
   try {
     const user = await User.findOne({ email: req.body.email })

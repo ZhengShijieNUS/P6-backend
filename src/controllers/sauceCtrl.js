@@ -1,6 +1,13 @@
 import Sauce from '../models/sauce.js'
 import fs from 'fs'
 
+/**
+ * Get all sauces from database
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
 export async function getAllSauces (req, res, next) {
   try {
     const allSauce = await Sauce.find()
@@ -12,6 +19,13 @@ export async function getAllSauces (req, res, next) {
   }
 }
 
+/**
+ * Get a specific sauce by the sauce ID
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
 export async function getOneSauce (req, res, next) {
   try {
     const sauce = await Sauce.findOne({ _id: req.params.id })
@@ -28,8 +42,16 @@ export async function getOneSauce (req, res, next) {
   }
 }
 
+/**
+ * To create a new sauce instance
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+
 export async function createSauce (req, res, next) {
-  // covert the body.sauce to jsonand use it
+  // covert the body.sauce to json and use it
   // rebuild the url for imageUrl
 
   const reqJson = JSON.parse(req.body.sauce)
@@ -45,7 +67,7 @@ export async function createSauce (req, res, next) {
   })
 
   try {
-    const newSauce = await sauce.save()
+    const newSauce = await sauce.save() // try to save the sauce into Sauce data model
 
     if (!newSauce) {
       throw new Error('Create new sauce failed')
@@ -61,14 +83,22 @@ export async function createSauce (req, res, next) {
   }
 }
 
+/**
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+
 export async function updateSauce (req, res, next) {
   const url = req.protocol + '://' + req.get('host')
-
  
   let newSauce = await Sauce.findOne({ _id: req.params.id })
   console.log(req.body)
   
   const reqJson = req.body
+  //if there is updated to image, then need to update the whole url and the path, 
+  //otherwise just assign everything to the same value as what req body gives
   if (req.file) {
     newSauce = {
       userId: reqJson.userId,
@@ -78,7 +108,6 @@ export async function updateSauce (req, res, next) {
       mainPepper: reqJson.mainPepper,
       imageUrl: url + '/src/images/' + req.file.filename,
       heat: reqJson.heat,
-     
     }
   } else {
     newSauce = {
@@ -107,6 +136,14 @@ export async function updateSauce (req, res, next) {
   }
 }
 
+/**
+ * The function to delete the sauce
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
+
 export async function deleteSauce(req, res, next) {
   try {
     const sauceId = req.params.id;
@@ -118,7 +155,7 @@ export async function deleteSauce(req, res, next) {
       return res.status(404).json({ message: "Sauce not found" });
     }
 
-    if (sauce.userId !== userId) {
+    if (sauce.userId !== userId) { // check whether the user has permission to delete the sauce
       return res.status(403).json({
         message: 'You are not authorized to delete this sauce.'
       });
@@ -126,6 +163,7 @@ export async function deleteSauce(req, res, next) {
 
     const filename = sauce.imageUrl.split('/images/')[1];
 
+    // Remove the file from path first, then delete the sauce from Sauce model
     fs.unlink(`src/images/${filename}`, async (err) => {
       if (err) {
         // Handle file deletion error
@@ -140,6 +178,13 @@ export async function deleteSauce(req, res, next) {
   }
 }
 
+/**
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ * @returns 
+ */
 export async function setLikeStatus(req, res, next) {
   try {
     const sauceId = req.params.id;
@@ -153,7 +198,8 @@ export async function setLikeStatus(req, res, next) {
     let update = {};
 
     if (like === 1) { // User likes the sauce
-      if (!sauce.usersLiked.includes(userId)) {
+      if (!sauce.usersLiked.includes(userId)) { 
+        // use Mongo DB operators to operate the data model, atomically update those fields(like, usersLiked, userDisliked and etc)
         update = {
           $inc: { likes: 1 },
           $push: { usersLiked: userId },
@@ -182,7 +228,7 @@ export async function setLikeStatus(req, res, next) {
       }
     }
 
-    if (Object.keys(update).length > 0) {
+    if (Object.keys(update).length > 0) { // determine whether any changes need to be made to the database. 
       await Sauce.findByIdAndUpdate(sauceId, update);
       res.status(200).json({ message: "User's like status updated" });
     } else {
